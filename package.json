@@ -1,0 +1,20 @@
+{
+  "name": "reportarch-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "server": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "express": "^4.21.0",
+    "formidable": "^3.5.1",
+    "nodemon": "^3.1.7",
+    "tar": "^7.4.3",
+    "unzipper": "^0.12.3",
+    "zip-stream": "^6.0.1"
+  }
+}
