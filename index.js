@@ -1,55 +1,42 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const formidable = require('formidable');
-var AdmZip = require("adm-zip");
+const express = require('express');
+const config = require('dotenv').config;
+const connectDB = require('./config/db');
+const securityMiddleware = require('./middleware/security');
 
-http.createServer((req, res) => {
-    if (req.method === 'POST') {
-        // Initialize formidable to handle multipart form data
-        const form = new formidable.IncomingForm();
-        
-        // Parse the incoming form data
-        form.parse(req, (err, fields, files) => {
-            if (err) {
-                console.error('Error parsing the form:', err);
-                res.writeHead(400, { 'Content-Type': 'text/plain' });
-                res.end('Error parsing form data');
-                return;
-            }
+const orgRoutes = require('./routes/org');
+const projectRoutes = require('./routes/project');
+const testSuiteRoutes = require('./routes/testSuite');
+const reportRoutes = require('./routes/report');
+const apiKeyRoutes = require('./routes/apiKey');
+const userRoutes = require('./routes/user');
+const authRoutes = require('./routes/auth');
 
-            // Access the uploaded file
-            const file = files.report; // 'file' is the field name in Postman form-data
-            
-            if (!file) {
-                res.writeHead(400, { 'Content-Type': 'text/plain' });
-                res.end('No file uploaded.');
-                return;
-            }
+config();
+const app = express();
 
-            // Handle different versions of `formidable`: `filepath` (new) or `path` (old)
-            const filePath = file[0].filepath;
-            console.log('Uploaded file path:', filePath);
-            const extractDir = path.join(__dirname, 'reports');
+// Security and parsing middleware
+app.use(securityMiddleware);
+app.use(express.json());
 
-            // Create the directory for extracted files if it doesn't exist
-            if (!fs.existsSync(extractDir)) {
-                fs.mkdirSync(extractDir);
-            }
+// API routes
+app.use('/api/org', orgRoutes);
+app.use('/api/project', projectRoutes);
+app.use('/api/testsuite', testSuiteRoutes);
+app.use('/api/report', reportRoutes);
+app.use('/api/apikey', apiKeyRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/auth', authRoutes);
 
-            var zip = new AdmZip(filePath);
-            const extractPath = path.join(extractDir, file[0].originalFilename);
+// Error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+});
 
-            // Unzip the uploaded file
-            zip.extractAllTo(extractPath, /*overwrite*/ true);
-
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end('File uploaded and extracted successfully.');
-        });
-    } else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
-    }
-}).listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+// Connect to DB and start server
+const PORT = process.env.PORT || 5000;
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
 });
